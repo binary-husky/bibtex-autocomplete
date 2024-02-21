@@ -1,5 +1,7 @@
-# 使用方法中文版
+# Bibtex Autocomplete （自动更新、补全参考文献信息） 使用方法中文版
 
+
+- step 0: 把 bibtex 放到 main.bib 中
 
 - step 1: 修改 run_task.py 中的文件路径和代理路径
 
@@ -71,7 +73,7 @@ narrow down the list of sources if some aren't relevant using command line optio
 
 ### Contents
 
-- [使用方法中文版](#使用方法中文版)
+- [Bibtex Autocomplete （自动更新、补全参考文献信息） 使用方法中文版](#bibtex-autocomplete-自动更新补全参考文献信息-使用方法中文版)
 - [Bibtex Autocomplete](#bibtex-autocomplete)
     - [Contents](#contents)
   - [New in version 1.3](#new-in-version-13)
