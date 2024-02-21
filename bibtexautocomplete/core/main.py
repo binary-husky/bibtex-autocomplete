@@ -127,6 +127,8 @@ def main(argv: Optional[List[str]] = None) -> None:
         entries,
         force_overwrite=overwrite,
         force_overwrite_all=args.force_overwrite,
+        remove_fields=args.remove_fields,
+        output = args.output,
         mark=args.mark,
         ignore_mark=args.ignore_mark,
         prefix=args.prefix,

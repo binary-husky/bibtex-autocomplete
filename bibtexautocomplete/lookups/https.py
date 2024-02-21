@@ -8,6 +8,7 @@ from ssl import _create_unverified_context
 from time import sleep, time
 from typing import Any, ClassVar, Dict, Optional
 from urllib.parse import urlencode
+import requests
 
 from ..bibtex.normalize import normalize_url
 from ..utils.constants import CONNECTION_TIMEOUT, MIN_QUERY_DELAY, USER_AGENT
@@ -22,7 +23,66 @@ SSL_Fail_Hint = Hint(
     "Alternatively, you can disable queries to this domain with -Q / --dont-query"
 )
 TIMEOUT_Hint = Hint("you can increase timeout with -t / --timeout option.")
+import json
+import os
+import pickle
+from threading import Lock
 
+CACHE_FILE = "cache.pkl"
+cache_lock = Lock()
+
+def objdump(obj, file=CACHE_FILE):
+    import pickle
+
+    with open(file, "wb+") as f:
+        pickle.dump(obj, f)
+
+    with open(file, "rb") as f:
+        try:
+            pickle.load(f)
+        except EOFError:
+            print('wtf')
+
+    return
+
+def objload(file=CACHE_FILE):
+    import pickle, os
+
+    if not os.path.exists(file):
+        return
+    with open(file, "rb") as f:
+        return pickle.load(f)
+
+def load_cache():
+    """
+    Load the cache file if it exists, otherwise returns an empty dictionary.
+    """
+    if os.path.exists(CACHE_FILE):
+        with cache_lock:
+            return objload(CACHE_FILE)
+    return {}
+
+def save_cache(cache_data):
+    """
+    Save the cache data to the cache file.
+    """
+    with cache_lock:
+        objdump(cache_data, CACHE_FILE)
+
+def read_cache(url):
+    """
+    Reads cache data for the given URL if available.
+    """
+    cache_data = load_cache()
+    return cache_data.get(url)
+
+def write_cache(url, data):
+    """
+    Writes data to the cache for the given URL.
+    """
+    cache_data = load_cache()
+    cache_data[url] = data
+    save_cache(cache_data)
 
 class HTTPSLookup(AbstractDataLookup[Input, Output]):
     """Abstract class to wrap https queries:
@@ -136,39 +196,87 @@ class HTTPSLookup(AbstractDataLookup[Input, Output]):
             request=request,
             url=url,
         )
+        response_status_code = 404
         logger.very_verbose_debug("headers: {headers}", headers=headers)
         start = time()
+        fail_reason = ""
         try:
-            if self.ignore_ssl:
-                connection = HTTPSConnection(
-                    domain,
-                    timeout=self.connection_timeout,
-                    context=_create_unverified_context(),
-                )
+            # if self.ignore_ssl:
+            #     connection = HTTPSConnection(
+            #         domain,
+            #         timeout=self.connection_timeout,
+            #         context=_create_unverified_context(),
+            #     )
+            # else:
+            #     connection = HTTPSConnection(domain, timeout=self.connection_timeout)
+            # connection.request(
+            #     request,
+            #     path,
+            #     self.get_body(),
+            #     headers,
+            # )
+            # self.response = connection.getresponse()
+            # self._last_query_info = {
+            #     "url": url,
+            #     "response-time": delay,
+            #     "response-status": self.response.status,
+            # }
+            # logger.debug(
+            #     "response {status}{reason} in {delay}s",
+            #     status=self.response.status,
+            #     reason=" " + self.response.reason if self.response.reason else "",
+            #     delay=delay,
+            # )
+            # logger.very_verbose_debug("response headers: {headers}", headers=self.response.headers)
+            # data = self.response.read()
+            # connection.close()
+            # read from cache
+            # def read_cache(url):
+            #     import json, os
+            #     if os.path.exists("cache.json"):
+            #         with open("cache.json", "r") as f:
+            #             data = f.read()
+            #             try:
+            #                 st = json.loads(data)
+            #                 if url in st:
+            #                     return st[url]
+            #                 else:
+            #                     return None
+            #             except:
+            #                 return None
+            #     else:
+            #         return None
+            # def write_cache(url, data):
+            #     import json, os
+            #     if os.path.exists("cache.json"):
+            #         with open("cache.json", "r") as f:
+            #             pre_json = json.loads(f.read())
+            #     else:
+            #         pre_json = {}
+
+            #     pre_json[url] = data
+            #     with open("cache.json", "w") as f:
+            #         f.write(json.dumps(pre_json))
+
+
+
+            if read_cache(url) is not None:
+                text = read_cache(url)
+                print('read from cache:', url)
+                response_status_code = 200
             else:
-                connection = HTTPSConnection(domain, timeout=self.connection_timeout)
-            connection.request(
-                request,
-                path,
-                self.get_body(),
-                headers,
-            )
-            self.response = connection.getresponse()
+                response = requests.request(
+                    method=request,
+                    url=url,
+                    headers=headers,
+                    timeout=self.connection_timeout,
+                )
+                text = response.text
+                write_cache(url, text)
+                response_status_code = response.status_code
+
+            data = text.encode()
             delay = round(time() - start, 3)
-            self._last_query_info = {
-                "url": url,
-                "response-time": delay,
-                "response-status": self.response.status,
-            }
-            logger.debug(
-                "response {status}{reason} in {delay}s",
-                status=self.response.status,
-                reason=" " + self.response.reason if self.response.reason else "",
-                delay=delay,
-            )
-            logger.very_verbose_debug("response headers: {headers}", headers=self.response.headers)
-            data = self.response.read()
-            connection.close()
         except timeout:
             if self.silent_fail:
                 return None
@@ -176,6 +284,7 @@ class HTTPSLookup(AbstractDataLookup[Input, Output]):
             TIMEOUT_Hint.emit()
             return None
         except (gaierror, OSError) as err:
+            fail_reason = str(err)
             if self.silent_fail:
                 return None
             error_name = "CONNECTION ERROR"
@@ -193,9 +302,9 @@ class HTTPSLookup(AbstractDataLookup[Input, Output]):
             return None
         return Data(
             data=data,
-            code=self.response.status,
+            code=response_status_code,
             delay=delay,
-            reason=self.response.reason,
+            reason=fail_reason,
         )
 
     def get_last_query_info(self) -> Dict[str, JSONType]:

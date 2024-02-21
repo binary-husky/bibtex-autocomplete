@@ -1,3 +1,13 @@
+# 使用方法中文版
+
+
+- step 1: 修改 run_task.py 中的文件路径和代理路径
+
+- step 2: 运行 run_task.py
+```
+python run_task.py
+```
+
 # Bibtex Autocomplete
 
 [![PyPI version][version-shield]][pypi-link]
@@ -61,18 +71,21 @@ narrow down the list of sources if some aren't relevant using command line optio
 
 ### Contents
 
-- [New in version 1.3](#new-in-version-13)
-- [Demo](#demo)
-- [Quick overview](#quick-overview)
-- [Installation](#installation)
-  - [Dependencies](#dependencies)
-- [Usage](#usage)
-- [Command line arguments](#command-line-arguments)
-  - [Query filtering](#query-filtering)
-  - [New field formatting](#new-field-formatting)
-  - [Global output formatting](#global-output-formatting)
-  - [Optional flags](#optional-flags)
-- [Credit and license](#credit-and-license)
+- [使用方法中文版](#使用方法中文版)
+- [Bibtex Autocomplete](#bibtex-autocomplete)
+    - [Contents](#contents)
+  - [New in version 1.3](#new-in-version-13)
+  - [Demo](#demo)
+  - [Quick overview](#quick-overview)
+  - [Installation](#installation)
+    - [Dependencies](#dependencies)
+  - [Usage](#usage)
+  - [Command line arguments](#command-line-arguments)
+    - [Query filtering](#query-filtering)
+    - [New field formatting](#new-field-formatting)
+    - [Global output formatting](#global-output-formatting)
+    - [Optional flags](#optional-flags)
+  - [Credit and license](#credit-and-license)
 
 ## New in version 1.3
 

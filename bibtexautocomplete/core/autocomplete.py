@@ -103,6 +103,8 @@ class BibtexAutocomplete(Iterable[EntryType]):
         entries: OnlyExclude[str],
         force_overwrite: Container[str] = [],
         force_overwrite_all: bool = False,
+        remove_fields: Container[str] = [],
+        output=None,
         mark: bool = False,
         ignore_mark: bool = False,
         prefix: bool = False,
@@ -115,10 +117,12 @@ class BibtexAutocomplete(Iterable[EntryType]):
         self.entries = entries
         self.force_overwrite = force_overwrite
         self.force_overwrite_all = force_overwrite_all
+        self.remove_fields = remove_fields
         self.changed_entries = 0
         self.changed_fields = 0
         self.changes = []
         self.dumps = []
+        self.output = output
         self.prefix = FIELD_PREFIX if prefix else ""
         self.mark = mark
         if ignore_mark:
@@ -257,14 +261,22 @@ class BibtexAutocomplete(Iterable[EntryType]):
             self.changed_entries += 1
             self.changed_fields += len(changes)
             self.changes.append((entry_id, changes))
+        print('find new fields', str(dump.new_fields))
         logger.verbose_info(
             BULLET + "{StBold}{entry}{StBoldOff} {nb} new fields",
             entry=entry["ID"].ljust(self.get_id_padding()),
             nb=len(changes),
         )
         self.dumps.append(dump)
+        # fuqingxu edit: remove unwanted fields
+        for field in self.remove_fields:
+            if field in entry:
+                entry.pop(field)
+        # fuqingxu edit fin
         if self.mark:
             entry[MARKED_FIELD] = datetime.today().strftime("%Y-%m-%d")
+        if self.output is not None:
+            self.write(self.output)
 
     def combine_field(self, results: List[BibtexEntry], fieldname: FieldType) -> Optional[BibtexField[Any]]:
         """Combine the values of a single field"""

@@ -127,6 +127,7 @@ parser.add_argument("--comma-first", "--fc", action="store_true")
 parser.add_argument("--no-trailing-comma", "--fl", action="store_false")
 parser.add_argument("--indent", "--fi", default="\t")
 
+parser.add_argument("--remove-fields", "-rf", action="append", default=[])
 parser.add_argument("--force-overwrite", "-f", action="store_true")
 parser.add_argument("--prefix", "-p", action="store_true")
 parser.add_argument("--inplace", "-i", action="store_true")
